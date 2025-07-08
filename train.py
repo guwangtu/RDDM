@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore")
 import numpy as np
 from model import DiffusionUNetCrossAttention, ConditionNet
 from diffusion import RDDM
-from data import get_datasets
+from data import get_datasets, get_WESAD_RAW
 import torch.nn as nn
 from metrics import *
 from lr_scheduler import CosineAnnealingLRWarmup
@@ -49,10 +49,11 @@ def train_rddm(config):
         id=f"INSERT ID HERE",
         config=config
     )
+    dataset_train, _ = get_WESAD_RAW()
+    #dataset_train, _ = get_datasets()
 
-    dataset_train, _ = get_datasets()
-
-    dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=128)
+    #dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=128)
+    dataloader = DataLoader(dataset_train, batch_size=1, shuffle=True, num_workers=1)
 
     rddm = RDDM(
         eps_model=DiffusionUNetCrossAttention(512, 1, device, num_heads=num_heads),
@@ -71,7 +72,7 @@ def train_rddm(config):
     Conditioning_network1 = nn.DataParallel(Conditioning_network1)
     Conditioning_network2 = nn.DataParallel(Conditioning_network2)
 
-    scheduler = CosineAnnealingLRWarmup(optim, T_max=1000, T_warmup=20)
+    scheduler = CosineAnnealingLRWarmup(optim, T_max=1000, T_warmup=20) 
     for i in range(n_epoch):
         print(f"\n****************** Epoch - {i} *******************\n\n")
 
@@ -130,5 +131,15 @@ if __name__ == "__main__":
         "alpha2": 1,
         "PATH": "INSERT PATH HERE"
     }
-
+    config = {
+        "n_epoch": 100,
+        "batch_size": 1,
+        "nT":10,
+        "device": "cuda",
+        "attention_heads": 8,
+        "cond_mask": 0.0,
+        "alpha1": 100,
+        "alpha2": 1,
+        "PATH": "INSERT PATH HERE"
+    }
     train_rddm(config)
